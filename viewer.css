@@ -1,0 +1,27 @@
+:root {
+  font: 15px/1.55 system-ui, sans-serif;
+  color: #e9e8e2;
+  background: #17191a;
+  color-scheme: dark;
+}
+body { margin: 0; }
+main { max-width: 680px; margin: auto; padding: 22px 16px; }
+.eyebrow { font-size: .72rem; letter-spacing: .16em; color: #a5d5c9; }
+h1 { margin: 0; font-size: clamp(1.3rem, 3vw, 1.8rem); }
+header > p:last-child { margin: .25rem 0 .85rem; color: #b9bfbd; }
+.stage { position: relative; text-align: center; background: #0c0e0e; border: 1px solid #333b3a; border-radius: 12px; }
+canvas { display: block; width: auto; height: min(56vh, 560px); max-width: 100%; margin: auto; touch-action: none; cursor: grab; }
+canvas:active { cursor: grabbing; }
+#load { position: absolute; inset: auto 0 0; padding: .6rem; background: #101515e6; }
+#load[hidden] { display: none; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; padding: .6rem 0; }
+.time-controls { flex-wrap: nowrap; }
+#time { min-width: 4rem; flex: 1; accent-color: #8cd4bd; }
+output { min-width: 4rem; font-variant-numeric: tabular-nums; }
+button { padding: .36rem .66rem; border: 1px solid #40504e; border-radius: 6px; background: #222b2a; }
+button:not(:disabled) { cursor: pointer; }
+button:not(:disabled):hover { background: #354844; }
+button:focus-visible, input:focus-visible { outline: 2px solid #9cddc9; }
+.hint { margin: .1rem 0; color: #b9bfbd; font-size: .84rem; }
+.back { color: #a5d5c9; display: inline-block; margin-bottom: 12px; text-underline-offset: .25em; }
+#load { margin: 0; }

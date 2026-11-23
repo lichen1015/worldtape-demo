@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WorldTape · 3D viewer</title>
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+  <main>
+    <header>
+      <a class="back" href="./">← WorldTape</a>
+      <h1>3D viewer</h1>
+      <p id="sceneLabel">Eight camera views · 105 frames at 24 fps</p>
+    </header>
+    <div class="stage" id="stage">
+      <canvas id="scene" aria-label="Dynamic 3D reconstruction"></canvas>
+      <p id="load" role="status">Loading reconstruction…</p>
+    </div>
+    <section aria-label="Playback controls">
+      <div class="controls time-controls">
+        <button id="play" type="button" disabled>Play</button>
+        <label for="time">Time</label>
+        <input id="time" type="range" min="0" max="0" value="0" step="1" disabled>
+        <output id="timeLabel">0.00 s</output>
+      </div>
+    </section>
+    <section aria-label="Camera controls">
+      <div class="controls">
+        <span>Camera</span>
+        <button type="button" id="reset" disabled>Reset camera</button>
+      </div>
+      <p class="hint" id="cameraHint">Drag to change viewpoint · Shift-drag to pan · Scroll to zoom</p>
+      <p class="hint" id="coverageHint"></p>
+      <p id="diagnostics" class="hint"></p>
+    </section>
+  </main>
+  <script type="module" src="viewer.js"></script>
+</body>
+</html>

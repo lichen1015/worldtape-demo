@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare Wan2.2 and MiniMax-H3 dynamic scene reconstructions at the same time and viewpoint.">
+  <title>WorldTape · Interactive Reconstruction</title>
+  <link rel="stylesheet" href="home.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./">WorldTape</a>
+    <a href="viewer.html?asset=wan-ring8">3D viewer <span aria-hidden="true">↗</span></a>
+  </header>
+  <main>
+    <section class="hero" aria-labelledby="title">
+      <div class="intro">
+        <h1 id="title">Eight-view<br>reconstruction</h1>
+        <p>Explore a dynamic scene reconstructed from generated videos. Compare Wan2.2 and MiniMax-H3 at the same frame and camera.</p>
+        <div class="actions">
+          <a class="primary" href="viewer.html?asset=wan-ring8&amp;frame=65&amp;camera=3">Explore Wan2.2 <span aria-hidden="true">↗</span></a>
+          <a class="secondary" href="viewer.html?asset=h3-ring8&amp;frame=65&amp;camera=3">Open MiniMax-H3</a>
+        </div>
+        <p class="metadata">105 frames at 24 fps · Interactive WebGL 2</p>
+      </div>
+      <figure class="comparison">
+        <div class="stills">
+          <a href="viewer.html?asset=wan-ring8&amp;frame=65&amp;camera=5">
+            <img src="images/wan-180.webp" width="352" height="614" alt="Wan2.2 rear-view reconstruction of the person jumping rope">
+            <span>Wan2.2</span>
+          </a>
+          <a href="viewer.html?asset=h3-ring8&amp;frame=65&amp;camera=5">
+            <img src="images/h3-180.webp" width="352" height="614" alt="MiniMax-H3 rear-view reconstruction at the same frame">
+            <span>MiniMax-H3</span>
+          </a>
+        </div>
+        <figcaption>Rear camera · Frame 65 <span>2.71 s</span></figcaption>
+      </figure>
+    </section>
+    <section class="notes" aria-label="How to compare">
+      <h2>Compare the same moment</h2>
+      <p>Scrub the timeline, select a camera and use the comparison button to switch models while keeping the selected frame and camera. The browser downloads about <span id="download-size">50 MB</span> per model.</p>
+      <p class="scope">Research preview. Both models are fitted to generated video, using nominal camera poses. Gaps and motion artifacts remain in some views.</p>
+    </section>
+  </main>
+  <footer>WorldTape</footer>
+</body>
+</html>
