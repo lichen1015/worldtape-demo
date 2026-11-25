@@ -1,0 +1,5 @@
+.demo-nav{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.demo-nav a{padding:5px 10px;border:1px solid var(--line);border-radius:7px;color:var(--muted);text-decoration:none}
+.demo-nav a:hover{border-color:var(--accent);color:var(--ink)}
+.demo-nav a[aria-current="page"]{border-color:var(--accent);color:var(--accent)}
+.demo-nav a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}

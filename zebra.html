@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Explore the WorldTape zebra reconstruction in 360 degrees and compare it with the H3 input views.">
+<title>WorldTape · Zebra reconstruction</title>
+<link rel="stylesheet" href="demo-nav.css">
+<link rel="preload" as="image" href="assets/layered-zebra/poster.jpg">
+<style>
+  :root{color-scheme:dark;--surface:#11171d;--line:#293540;--muted:#a7b4c0;--ink:#eff3f5;--accent:#9fe1d0}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1015;color:var(--ink);font:15px/1.5 "PingFang SC","Microsoft Yahei",system-ui,sans-serif}
+  main{max-width:1120px;margin:0 auto;padding:28px 24px 24px}
+  header{margin-bottom:18px}
+  h1,p{margin:0}
+  h1{font-size:clamp(22px,3.2vw,34px);font-weight:650;letter-spacing:-.03em}
+  p,output{color:var(--muted)}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(245px,280px);gap:16px}
+  .stage,.controls,details{background:var(--surface);border:1px solid var(--line);border-radius:14px;min-width:0}
+  .stage{display:grid;place-items:center;overflow:hidden;background:#0f161c}
+  .stage canvas,.stage video{display:block;width:min(100%,clamp(280px,64vh,580px));aspect-ratio:1;object-fit:contain}
+  canvas{cursor:grab;touch-action:pan-y;background:center/contain no-repeat url("assets/layered-zebra/poster.jpg")}
+  canvas.dragging{cursor:grabbing}
+  [hidden]{display:none!important}
+  .controls{padding:18px}
+  .buttons{display:grid;gap:7px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .presets{grid-template-columns:repeat(4,minmax(0,1fr))}
+  button{border:1px solid #384753;border-radius:7px;background:#1a252f;color:var(--ink);font:inherit;min-height:36px;padding:5px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#102620;font-weight:650}
+  button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .angle-controls{border-top:1px solid var(--line);margin-top:18px;padding-top:17px}
+  .row{display:flex;align-items:center;justify-content:space-between}
+  output{font-variant-numeric:tabular-nums}
+  .range{width:100%;margin:8px 0 12px;accent-color:var(--accent)}
+  .hint{font-size:13px;margin-top:12px}
+  details{margin-top:16px;padding:12px 16px}
+  summary{cursor:pointer;font-weight:650}
+  details p{margin-top:8px}
+  details video{display:block;width:100%;max-height:66vh;margin-top:8px}
+  footer{margin-top:12px;font-size:13px}
+  footer a{color:var(--muted);text-underline-offset:3px}
+  @media(max-width:555px){main{padding:16px 12px}.layout{grid-template-columns:1fr}.controls{padding:14px}}
+</style>
+</head>
+<body>
+<main>
+  <nav class="demo-nav" aria-label="Reconstruction demos">
+    <a href="./">Jump rope</a>
+    <a href="zebra.html" aria-current="page">Zebra</a>
+  </nav>
+  <header>
+    <h1>WorldTape · Zebra</h1>
+    <p>Layered FreeTimeGS++ reconstruction from eight H3-generated views</p>
+  </header>
+  <div class="layout">
+    <section class="stage" aria-label="Zebra reconstruction">
+      <canvas id="view" width="320" height="320" aria-label="Reconstructed zebra at 3.5 seconds. Drag horizontally or use the camera slider."></canvas>
+      <video id="motion" preload="none" controls muted playsinline hidden aria-label="Five-second dynamic orbit" poster="assets/layered-zebra/poster.jpg"></video>
+    </section>
+    <aside class="controls">
+      <div class="buttons">
+        <button id="frozen-mode" type="button" aria-pressed="true">Explore 360°</button>
+        <button id="motion-mode" type="button" aria-pressed="false">Play motion</button>
+      </div>
+      <div id="angle-controls" class="angle-controls">
+        <div class="row"><label for="angle"><strong>Camera angle</strong></label><output id="angle-value" for="angle">0°</output></div>
+        <input class="range" id="angle" type="range" min="0" max="23" value="0" aria-valuetext="0 degrees">
+        <div class="buttons presets">
+          <button type="button" data-angle="0">0°</button>
+          <button type="button" data-angle="6">90°</button>
+          <button type="button" data-angle="12">180°</button>
+          <button type="button" data-angle="18">270°</button>
+        </div>
+        <p class="hint">Drag to orbit a fixed moment at 3.5 seconds.</p>
+      </div>
+      <p id="motion-hint" class="hint" hidden>The zebra moves as the camera completes one turn in five seconds.</p>
+      <p id="status" class="hint" role="status"></p>
+    </aside>
+  </div>
+  <details>
+    <summary>H3 input vs. reconstruction</summary>
+    <p>H3 input on top and reconstructed views below, at four fixed cameras.</p>
+    <video controls muted playsinline preload="none" src="assets/layered-zebra/comparison.mp4" aria-label="Four fixed views comparing H3 input to the reconstruction"></video>
+  </details>
+  <footer><a href="https://kyleleey.github.io/3DFauna/">3D-Fauna source sequence ↗</a></footer>
+</main>
+<script>
+"use strict";
+const canvas = document.getElementById("view");
+const context = canvas.getContext("2d");
+const motion = document.getElementById("motion");
+const slider = document.getElementById("angle");
+const value = document.getElementById("angle-value");
+const angleControls = document.getElementById("angle-controls");
+const motionHint = document.getElementById("motion-hint");
+const status = document.getElementById("status");
+const frozenMode = document.getElementById("frozen-mode");
+const motionMode = document.getElementById("motion-mode");
+const atlas = new Image();
+const tile = canvas.width;
+const views = 24;
+let angle = 0;
+let pending = false;
+let drag = null;
+
+function draw() {
+  pending = false;
+  if (!atlas.naturalWidth) return;
+  const x = (angle % 6) * tile;
+  const y = Math.floor(angle / 6) * tile;
+  context.drawImage(atlas, x, y, tile, tile, 0, 0, tile, tile);
+}
+
+function setAngle(index) {
+  angle = ((Number(index) % views) + views) % views;
+  slider.value = angle;
+  value.textContent = (angle * 15) + "°";
+  slider.setAttribute("aria-valuetext", (angle * 15) + " degrees");
+  if (!pending) {
+    pending = true;
+    requestAnimationFrame(draw);
+  }
+}
+atlas.onload = draw;
+atlas.onerror = () => { status.textContent = "The angle preview could not load. Try reopening this page."; };
+atlas.src = "assets/layered-zebra/angles.jpg";
+
+slider.addEventListener("input", event => setAngle(event.target.value));
+document.querySelectorAll("[data-angle]").forEach(button => {
+  button.addEventListener("click", () => setAngle(button.dataset.angle));
+});
+canvas.addEventListener("pointerdown", event => {
+  if (event.button !== 0) return;
+  drag = {x: event.clientX, angle};
+  canvas.setPointerCapture(event.pointerId);
+  canvas.classList.add("dragging");
+});
+canvas.addEventListener("pointermove", event => {
+  if (drag) setAngle(drag.angle + Math.round((event.clientX - drag.x) / 12));
+});
+for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
+  canvas.addEventListener(name, () => {
+    drag = null;
+    canvas.classList.remove("dragging");
+  });
+}
+function setMode(isMotion) {
+  frozenMode.setAttribute("aria-pressed", String(!isMotion));
+  motionMode.setAttribute("aria-pressed", String(isMotion));
+  canvas.hidden = angleControls.hidden = isMotion;
+  motion.hidden = motionHint.hidden = !isMotion;
+  if (!isMotion) motion.pause();
+}
+motionMode.addEventListener("click", () => {
+  setMode(true);
+  if (!motion.hasAttribute("src")) motion.src = "assets/layered-zebra/orbit.mp4";
+  if (motion.ended) motion.currentTime = 0;
+  motion.play().catch(() => {});
+});
+frozenMode.addEventListener("click", () => setMode(false));
+motion.addEventListener("error", () => { status.textContent = "The motion video could not load."; });
+</script>
+</body>
+</html>
