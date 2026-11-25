@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Explore the layered WorldTape jump-rope reconstruction across 32 viewpoints and a synchronized timeline.">
+<link rel="preload" as="image" href="assets/layered-jump-rope/poster_f065.jpg">
 <title>WorldTape · Jump-rope reconstruction</title>
 <style>
   :root{color-scheme:dark;--surface:#11171d;--line:#293540;--muted:#a7b4c0;--ink:#eff3f5;--accent:#9fe1d0}
@@ -45,7 +46,7 @@
   <div class="layout">
     <section class="stage" aria-label="Layered scene preview">
       <canvas id="view" width="352" height="640" aria-label="Reconstructed jumper. Drag left or right or use the camera slider to change angle."></canvas>
-      <video id="atlas" preload="auto" muted playsinline loop src="assets/layered-jump-rope/angles.mp4"></video>
+      <video id="atlas" preload="auto" muted playsinline loop src="assets/layered-jump-rope/angles-lite.mp4"></video>
       <output id="hud">90° · 2.71 s</output>
     </section>
     <aside class="controls">
@@ -86,72 +87,111 @@
 const $ = id => document.getElementById(id);
 const video = $("atlas"), view = $("view"), ctx = view.getContext("2d");
 const angleInput = $("angle"), timeInput = $("time");
+const angleValue = $("angle-value"), timeValue = $("time-value"), hud = $("hud");
+const status = $("status"), play = $("play");
 const backdrop = new Image(), poster = new Image();
-const fps = 24, frames = 105, count = 32, width = 352, height = 640, columns = 8;
+const fps = 24, frames = 105, count = 32, columns = 8;
+const tileWidth = 192, tileHeight = 348;
+const { width, height } = view;
 let angle = 8, frame = 65, layer = "combined", pending = 65, drag = null;
-let ready = false;
+let ready = false, drawTicket = 0, seekTicket = 0;
+let lastAngle = -1, lastFrame = -1, painted = false;
+const readyMessage = "32 rendered viewpoints · 24 fps";
 function updateLabels() {
   const degrees = String(Number((angle * 360 / count).toFixed(2)));
   const seconds = (frame / fps).toFixed(2) + " s";
-  $("angle-value").textContent = degrees + "°";
-  $("time-value").textContent = seconds;
-  $("hud").textContent = degrees + "° · " + seconds;
-  angleInput.setAttribute("aria-valuetext", degrees + " degrees");
-  timeInput.setAttribute("aria-valuetext", seconds);
-  angleInput.value = angle;
-  timeInput.value = frame;
+  if (lastAngle !== angle) {
+    angleValue.textContent = degrees + "°";
+    angleInput.setAttribute("aria-valuetext", degrees + " degrees");
+    angleInput.value = angle;
+    lastAngle = angle;
+  }
+  if (lastFrame !== frame) {
+    timeValue.textContent = seconds;
+    timeInput.setAttribute("aria-valuetext", seconds);
+    timeInput.value = frame;
+    lastFrame = frame;
+  }
+  hud.textContent = degrees + "° · " + seconds;
 }
 function draw() {
+  drawTicket = 0;
   const media = layer === "background" ? backdrop : video;
-  if ((media === video && video.readyState < 2) || (media === backdrop && !backdrop.naturalWidth)) {
-    if (poster.naturalWidth) ctx.drawImage(poster, 0, 0, width, height);
+  const missing = media === video ? (video.readyState < 2 || video.seeking) : !backdrop.naturalWidth;
+  if (missing) {
+    if (!painted && poster.naturalWidth) {
+      ctx.drawImage(poster, 0, 0, width, height);
+      painted = true;
+    }
     return;
   }
-  const x = (angle % columns) * width, y = Math.floor(angle / columns) * height;
-  ctx.drawImage(media, x, y, width, height, 0, 0, width, height);
+  const x = (angle % columns) * tileWidth, y = Math.floor(angle / columns) * tileHeight;
+  ctx.drawImage(media, x, y, tileWidth, tileHeight, 0, 0, width, height);
+  painted = true;
+}
+function requestDraw() {
+  if (!drawTicket) drawTicket = requestAnimationFrame(draw);
 }
 function setAngle(value) {
-  angle = ((Number(value) % count) + count) % count;
+  const next = ((Number(value) % count) + count) % count;
+  if (next === angle) return;
+  angle = next;
   updateLabels();
-  draw();
+  requestDraw();
+}
+function flushSeek() {
+  if (!video.duration || video.seeking || pending === null) return;
+  const target = Math.min(video.duration - .001, pending / fps + .002);
+  pending = null;
+  if (Math.abs(video.currentTime - target) > .001) video.currentTime = target;
+  else requestDraw();
 }
 function seek(value) {
   frame = Math.max(0, Math.min(frames - 1, Number(value)));
   pending = frame;
   updateLabels();
-  if (!video.duration) return;
-  video.currentTime = Math.min(video.duration - .001, frame / fps + .002);
+  if (!seekTicket) seekTicket = requestAnimationFrame(() => {
+    seekTicket = 0;
+    flushSeek();
+  });
 }
 function tick(_, metadata) {
-  if (pending === null && !video.paused) {
+  if (pending === null && !video.paused && !video.seeking) {
     const actual = metadata ? metadata.mediaTime : video.currentTime;
-    frame = Math.min(frames - 1, Math.floor(actual * fps + .005));
-    updateLabels();
+    const next = Math.min(frames - 1, Math.floor(actual * fps + .005));
+    if (frame !== next) {
+      frame = next;
+      updateLabels();
+    }
   }
-  draw();
+  if (layer === "combined") requestDraw();
   if ("requestVideoFrameCallback" in video) video.requestVideoFrameCallback(tick);
 }
 function stopPlayback() {
   video.pause();
-  $("play").textContent = "Play";
+  play.textContent = "Play";
 }
 video.addEventListener("loadedmetadata", () => seek(pending ?? frame));
 video.addEventListener("canplay", () => {
   ready = true;
-  $("status").textContent = "32 rendered viewpoints · 24 fps";
-  draw();
+  if (layer === "combined") status.textContent = readyMessage;
+  requestDraw();
 });
 video.addEventListener("seeked", () => {
-  pending = null;
-  draw();
+  flushSeek();
+  requestDraw();
 });
 video.addEventListener("error", () => {
-  $("status").textContent = "Could not load the scene media. Try reloading the page.";
+  status.textContent = "Could not load the scene media. Try reloading the page.";
 });
 if ("requestVideoFrameCallback" in video) video.requestVideoFrameCallback(tick);
 else video.addEventListener("timeupdate", () => tick());
-backdrop.onload = poster.onload = draw;
-backdrop.src = "assets/layered-jump-rope/background.jpg";
+backdrop.onload = () => {
+  status.textContent = readyMessage;
+  requestDraw();
+};
+backdrop.onerror = () => { status.textContent = "Could not load the background layer."; };
+poster.onload = requestDraw;
 poster.src = "assets/layered-jump-rope/poster_f065.jpg";
 angleInput.addEventListener("input", e => setAngle(e.target.value));
 timeInput.addEventListener("input", e => {
@@ -164,17 +204,23 @@ document.querySelectorAll("[data-frame]").forEach(el => el.addEventListener("cli
   seek(el.dataset.frame);
 }));
 $("restart").addEventListener("click", () => seek(0));
-$("play").addEventListener("click", async () => {
+play.addEventListener("click", async () => {
   if (!ready) return;
   if (!video.paused) return stopPlayback();
-  try { await video.play(); $("play").textContent = "Pause"; }
-  catch { $("status").textContent = "Playback failed. Try reloading the page."; }
+  try { await video.play(); play.textContent = "Pause"; }
+  catch { status.textContent = "Playback failed. Try reloading the page."; }
 });
 for (const name of ["combined", "background"]) $(name).addEventListener("click", () => {
   layer = name;
   $("combined").setAttribute("aria-pressed", String(name === "combined"));
   $("background").setAttribute("aria-pressed", String(name === "background"));
-  draw();
+  if (name === "background" && !backdrop.src) {
+    status.textContent = "Loading background…";
+    backdrop.src = "assets/layered-jump-rope/background-lite.jpg";
+  } else if (name === "combined" && ready) {
+    status.textContent = readyMessage;
+  }
+  requestDraw();
 });
 view.addEventListener("pointerdown", e => {
   if (e.button !== 0) return;
