@@ -7,39 +7,7 @@
 <link rel="preload" as="image" href="assets/layered-jump-rope/poster_f065.jpg">
 <title>WorldTape · Jump-rope reconstruction</title>
 <link rel="stylesheet" href="demo-nav.css">
-<style>
-  :root{color-scheme:dark;--surface:#11171d;--line:#293540;--muted:#a7b4c0;--ink:#eff3f5;--accent:#9fe1d0}
-  *{box-sizing:border-box}
-  body{margin:0;background:#0b1015;color:var(--ink);font:15px/1.5 "PingFang SC","Microsoft Yahei",system-ui,sans-serif}
-  main{max-width:1120px;margin:0 auto;padding:28px 24px 24px}
-  header{display:flex;justify-content:space-between;align-items:end;gap:14px;margin-bottom:18px}
-  h1,h2,p{margin:0}
-  h1{font-size:clamp(22px,3.2vw,34px);font-weight:650;letter-spacing:-.03em}
-  header a{white-space:nowrap;text-underline-offset:3px}
-  h2{font-size:15px;font-weight:650}
-  header a,header span,.hint,output{color:var(--muted)}
-  .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(245px,280px);gap:16px}
-  .stage,.controls{background:var(--surface);border:1px solid var(--line);border-radius:14px;min-width:0}
-  .stage{position:relative;display:grid;place-items:center;overflow:hidden;background:#0f161c}
-  canvas{width:auto;height:clamp(300px,68vh,640px);max-width:100%;aspect-ratio:352/640;object-fit:contain;cursor:grab;touch-action:pan-y}
-  canvas.dragging{cursor:grabbing}
-  .stage output{position:absolute;left:14px;bottom:14px;pointer-events:none;color:#eef7f7;background:#101820e8;border:1px solid #35505b;border-radius:6px;padding:4px 8px;font-variant-numeric:tabular-nums}
-  .stage video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-  .controls{padding:18px}
-  .section+.section{border-top:1px solid var(--line);margin-top:18px;padding-top:17px}
-  .row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
-  .row output{font-variant-numeric:tabular-nums}
-  .buttons{display:grid;gap:7px;grid-template-columns:repeat(2,minmax(0,1fr))}
-  .angles{grid-template-columns:repeat(4,minmax(0,1fr))}
-  button{border:1px solid #384753;border-radius:7px;background:#1a252f;color:var(--ink);font:inherit;min-height:36px;padding:5px 8px;cursor:pointer}
-  button:hover{border-color:var(--accent)}
-  button[aria-pressed="true"],#play{background:var(--accent);border-color:var(--accent);color:#102620;font-weight:650}
-  button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-  .range{width:100%;margin:6px 0 12px;accent-color:var(--accent)}
-  .hint{font-size:13px;margin-top:7px}
-  #status{min-height:1.5em;color:var(--muted);margin-top:16px;font-size:13px}
-  @media(max-width:555px){main{padding:16px 12px}header{align-items:start;flex-direction:column;margin-bottom:12px}.layout{grid-template-columns:1fr}.controls{padding:14px}canvas{height:min(56vh,490px)}}
-</style>
+<link rel="stylesheet" href="demo-layout.css">
 </head>
 <body>
 <main>
@@ -47,23 +15,31 @@
     <a href="./" aria-current="page">Jump rope</a>
     <a href="zebra.html">Zebra</a>
   </nav>
-  <header><div><h1>WorldTape · Jump rope</h1><span>Layered FreeTimeGS++ reconstruction</span></div><a href="comparison.html">Earlier comparisons ↗</a></header>
+  <header>
+    <h1>WorldTape · Jump rope</h1>
+    <p>Layered FreeTimeGS++ reconstruction from eight H3-generated views</p>
+  </header>
   <div class="layout">
-    <section class="stage" aria-label="Layered scene preview">
-      <canvas id="view" width="352" height="640" aria-label="Reconstructed jumper. Drag left or right or use the camera slider to change angle."></canvas>
-      <video id="atlas" preload="auto" muted playsinline loop src="assets/layered-jump-rope/angles-lite.mp4"></video>
-      <output id="hud">90° · 2.71 s</output>
-    </section>
-    <aside class="controls">
-      <div class="section">
-        <div class="row"><h2>Layers</h2></div>
-        <div class="buttons">
-          <button id="combined" type="button" aria-pressed="true">Full scene</button>
-          <button id="background" type="button" aria-pressed="false">Background only</button>
+    <div class="player">
+      <section class="stage" aria-label="Layered scene preview">
+        <canvas id="view" width="352" height="640" aria-label="Reconstructed jumper. Drag left or right or use the camera slider to change angle."></canvas>
+        <video id="atlas" preload="auto" muted playsinline loop src="assets/layered-jump-rope/angles-lite.mp4"></video>
+      </section>
+      <section class="timeline" aria-label="Playback">
+        <div class="row"><label for="time"><strong>Time</strong></label><output id="time-value" for="time">2.71 s</output></div>
+        <input class="range" id="time" type="range" min="0" max="104" value="65">
+        <div class="timeline-actions">
+          <button id="play" type="button">Play</button>
+          <button id="restart" type="button">Restart</button>
+          <button type="button" data-frame="65">First jump</button>
+          <button type="button" data-frame="88">Second jump</button>
+          <p id="status" role="status">Loading reconstruction…</p>
         </div>
-      </div>
+      </section>
+    </div>
+    <aside class="controls" aria-label="View settings">
       <div class="section">
-        <div class="row"><label for="angle"><strong>Camera</strong></label><output id="angle-value" for="angle">90°</output></div>
+        <div class="row"><label for="angle"><strong>Camera angle</strong></label><output id="angle-value" for="angle">90°</output></div>
         <input class="range" id="angle" type="range" min="0" max="31" value="8">
         <div class="buttons angles">
           <button type="button" data-angle="0">0°</button>
@@ -71,28 +47,25 @@
           <button type="button" data-angle="16">180°</button>
           <button type="button" data-angle="24">270°</button>
         </div>
-        <p class="hint">Drag the scene to change angle, even while paused.</p>
+        <p class="hint">Drag the preview to change angles.</p>
       </div>
       <div class="section">
-        <div class="row"><label for="time"><strong>Time</strong></label><output id="time-value" for="time">2.71 s</output></div>
-        <input class="range" id="time" type="range" min="0" max="104" value="65">
+        <div class="row"><h2>Layers</h2></div>
         <div class="buttons">
-          <button id="play" type="button">Play</button>
-          <button id="restart" type="button">Restart</button>
-          <button type="button" data-frame="65">First jump</button>
-          <button type="button" data-frame="88">Second jump</button>
+          <button id="combined" type="button" aria-pressed="true">Full scene</button>
+          <button id="background" type="button" aria-pressed="false">Background only</button>
         </div>
       </div>
-      <p id="status" role="status">Loading reconstruction…</p>
     </aside>
   </div>
+  <footer><a href="comparison.html">Earlier comparisons ↗</a></footer>
 </main>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
 const video = $("atlas"), view = $("view"), ctx = view.getContext("2d");
 const angleInput = $("angle"), timeInput = $("time");
-const angleValue = $("angle-value"), timeValue = $("time-value"), hud = $("hud");
+const angleValue = $("angle-value"), timeValue = $("time-value");
 const status = $("status"), play = $("play");
 const backdrop = new Image(), poster = new Image();
 const fps = 24, frames = 105, count = 32, columns = 8;
@@ -117,7 +90,6 @@ function updateLabels() {
     timeInput.value = frame;
     lastFrame = frame;
   }
-  hud.textContent = degrees + "° · " + seconds;
 }
 function draw() {
   drawTicket = 0;

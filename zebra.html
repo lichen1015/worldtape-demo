@@ -7,45 +7,9 @@
 <title>WorldTape · Zebra reconstruction</title>
 <link rel="stylesheet" href="demo-nav.css">
 <link rel="preload" as="image" href="assets/layered-zebra/poster.jpg">
-<style>
-  :root{color-scheme:dark;--surface:#11171d;--line:#293540;--muted:#a7b4c0;--ink:#eff3f5;--accent:#9fe1d0}
-  *{box-sizing:border-box}
-  body{margin:0;background:#0b1015;color:var(--ink);font:15px/1.5 "PingFang SC","Microsoft Yahei",system-ui,sans-serif}
-  main{max-width:1120px;margin:0 auto;padding:28px 24px 24px}
-  header{margin-bottom:18px}
-  h1,p{margin:0}
-  h1{font-size:clamp(22px,3.2vw,34px);font-weight:650;letter-spacing:-.03em}
-  p,output{color:var(--muted)}
-  .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(245px,280px);gap:16px}
-  .stage,.controls,details{background:var(--surface);border:1px solid var(--line);border-radius:14px;min-width:0}
-  .stage{display:grid;place-items:center;overflow:hidden;background:#0f161c}
-  .stage canvas{display:block;width:min(100%,clamp(280px,64vh,580px));aspect-ratio:1;object-fit:contain}
-  .stage{position:relative}
-  .stage video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-  canvas{cursor:grab;touch-action:pan-y;background:center/contain no-repeat url("assets/layered-zebra/poster.jpg")}
-  canvas.dragging{cursor:grabbing}
-  .controls{padding:18px}
-  .buttons{display:grid;gap:7px;grid-template-columns:repeat(2,minmax(0,1fr))}
-  .presets{grid-template-columns:repeat(4,minmax(0,1fr))}
-  button{border:1px solid #384753;border-radius:7px;background:#1a252f;color:var(--ink);font:inherit;min-height:36px;padding:5px;cursor:pointer}
-  button:hover{border-color:var(--accent)}
-  #play{background:var(--accent);border-color:var(--accent);color:#102620;font-weight:650}
-  button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-  .control-section{border-top:1px solid var(--line);margin-top:18px;padding-top:17px}
-  .row{display:flex;align-items:center;justify-content:space-between}
-  output{font-variant-numeric:tabular-nums}
-  .range{width:100%;margin:8px 0 12px;accent-color:var(--accent)}
-  .hint{font-size:13px;margin-top:12px}
-  details{margin-top:16px;padding:12px 16px}
-  summary{cursor:pointer;font-weight:650}
-  details p{margin-top:8px}
-  details video{display:block;width:100%;max-height:66vh;margin-top:8px}
-  footer{margin-top:12px;font-size:13px}
-  footer a{color:var(--muted);text-underline-offset:3px}
-  @media(max-width:555px){main{padding:16px 12px}.layout{grid-template-columns:1fr}.controls{padding:14px}}
-</style>
+<link rel="stylesheet" href="demo-layout.css">
 </head>
-<body>
+<body class="zebra">
 <main>
   <nav class="demo-nav" aria-label="Reconstruction demos">
     <a href="./">Jump rope</a>
@@ -56,31 +20,33 @@
     <p>Layered FreeTimeGS++ reconstruction from eight H3-generated views</p>
   </header>
   <div class="layout">
-    <section class="stage" aria-label="Zebra reconstruction">
-      <canvas id="view" width="320" height="320" aria-label="Reconstructed zebra. Drag horizontally to change the camera."></canvas>
-      <video id="motion" preload="auto" muted playsinline loop aria-hidden="true" src="assets/layered-zebra/motion-atlas.mp4"></video>
-    </section>
-    <aside class="controls">
-      <div>
+    <div class="player">
+      <section class="stage" aria-label="Zebra reconstruction">
+        <canvas id="view" width="320" height="320" aria-label="Reconstructed zebra. Drag horizontally to change the camera."></canvas>
+        <video id="motion" preload="auto" muted playsinline loop aria-hidden="true" src="assets/layered-zebra/motion-atlas.mp4"></video>
+      </section>
+      <section class="timeline" aria-label="Playback">
+        <div class="row"><label for="time"><strong>Time</strong></label><output id="time-value" for="time">3.50 s</output></div>
+        <input class="range" id="time" type="range" min="0" max="119" value="84" aria-valuetext="3.50 seconds">
+        <div class="timeline-actions">
+          <button id="play" type="button">Play</button>
+          <button id="restart" type="button">Restart</button>
+          <p id="status" role="status">Loading motion…</p>
+        </div>
+      </section>
+    </div>
+    <aside class="controls" aria-label="View settings">
+      <div class="section">
         <div class="row"><label for="angle"><strong>Camera angle</strong></label><output id="angle-value" for="angle">0°</output></div>
         <input class="range" id="angle" type="range" min="0" max="23" value="0" aria-valuetext="0 degrees">
-        <div class="buttons presets">
+        <div class="buttons angles">
           <button type="button" data-angle="0">0°</button>
           <button type="button" data-angle="6">90°</button>
           <button type="button" data-angle="12">180°</button>
           <button type="button" data-angle="18">270°</button>
         </div>
-        <p class="hint">Drag the zebra to change angles during playback.</p>
+        <p class="hint">Drag the preview to change angles.</p>
       </div>
-      <div class="control-section">
-        <div class="row"><label for="time"><strong>Time</strong></label><output id="time-value" for="time">3.50 s</output></div>
-        <input class="range" id="time" type="range" min="0" max="119" value="84" aria-valuetext="3.50 seconds">
-        <div class="buttons">
-          <button id="play" type="button">Play</button>
-          <button id="restart" type="button">Restart</button>
-        </div>
-      </div>
-      <p id="status" class="hint" role="status">Loading motion…</p>
     </aside>
   </div>
   <details>
