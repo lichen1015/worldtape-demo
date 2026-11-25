@@ -1,0 +1,10 @@
+{
+  "fps": 24,
+  "frames": 105,
+  "tile_width": 352,
+  "tile_height": 640,
+  "columns": 8,
+  "rows": 4,
+  "angles": 32,
+  "method": "FreeTimeGS++ separated compositing"
+}

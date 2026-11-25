@@ -1,48 +1,195 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Compare Wan2.2 and MiniMax-H3 dynamic scene reconstructions at the same time and viewpoint.">
-  <title>WorldTape · Interactive Reconstruction</title>
-  <link rel="stylesheet" href="home.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Explore the layered WorldTape jump-rope reconstruction across 32 viewpoints and a synchronized timeline.">
+<title>WorldTape · Jump-rope reconstruction</title>
+<style>
+  :root{color-scheme:dark;--surface:#11171d;--line:#293540;--muted:#a7b4c0;--ink:#eff3f5;--accent:#9fe1d0}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b1015;color:var(--ink);font:15px/1.5 "PingFang SC","Microsoft Yahei",system-ui,sans-serif}
+  main{max-width:1120px;margin:0 auto;padding:28px 24px 24px}
+  header{display:flex;justify-content:space-between;align-items:end;gap:14px;margin-bottom:18px}
+  h1,h2,p{margin:0}
+  h1{font-size:clamp(22px,3.2vw,34px);font-weight:650;letter-spacing:-.03em}
+  header a{white-space:nowrap;text-underline-offset:3px}
+  h2{font-size:15px;font-weight:650}
+  header a,header span,.hint,output{color:var(--muted)}
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(245px,280px);gap:16px}
+  .stage,.controls{background:var(--surface);border:1px solid var(--line);border-radius:14px;min-width:0}
+  .stage{position:relative;display:grid;place-items:center;overflow:hidden;background:#0f161c}
+  canvas{width:auto;height:clamp(300px,68vh,640px);max-width:100%;aspect-ratio:352/640;object-fit:contain;cursor:grab;touch-action:pan-y}
+  canvas.dragging{cursor:grabbing}
+  .stage output{position:absolute;left:14px;bottom:14px;pointer-events:none;color:#eef7f7;background:#101820e8;border:1px solid #35505b;border-radius:6px;padding:4px 8px;font-variant-numeric:tabular-nums}
+  .stage video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .controls{padding:18px}
+  .section+.section{border-top:1px solid var(--line);margin-top:18px;padding-top:17px}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+  .row output{font-variant-numeric:tabular-nums}
+  .buttons{display:grid;gap:7px;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .angles{grid-template-columns:repeat(4,minmax(0,1fr))}
+  button{border:1px solid #384753;border-radius:7px;background:#1a252f;color:var(--ink);font:inherit;min-height:36px;padding:5px 8px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  button[aria-pressed="true"],#play{background:var(--accent);border-color:var(--accent);color:#102620;font-weight:650}
+  button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .range{width:100%;margin:6px 0 12px;accent-color:var(--accent)}
+  .hint{font-size:13px;margin-top:7px}
+  #status{min-height:1.5em;color:var(--muted);margin-top:16px;font-size:13px}
+  @media(max-width:555px){main{padding:16px 12px}header{align-items:start;flex-direction:column;margin-bottom:12px}.layout{grid-template-columns:1fr}.controls{padding:14px}canvas{height:min(56vh,490px)}}
+</style>
 </head>
 <body>
-  <header class="site-header">
-    <a class="brand" href="./">WorldTape</a>
-    <a href="viewer.html?asset=wan-ring8">3D viewer <span aria-hidden="true">↗</span></a>
-  </header>
-  <main>
-    <section class="hero" aria-labelledby="title">
-      <div class="intro">
-        <h1 id="title">Eight-view<br>reconstruction</h1>
-        <p>Explore a dynamic scene reconstructed from generated videos. Compare Wan2.2 and MiniMax-H3 at the same frame and camera.</p>
-        <div class="actions">
-          <a class="primary" href="viewer.html?asset=wan-ring8&amp;frame=65&amp;camera=3">Explore Wan2.2 <span aria-hidden="true">↗</span></a>
-          <a class="secondary" href="viewer.html?asset=h3-ring8&amp;frame=65&amp;camera=3">Open MiniMax-H3</a>
+<main>
+  <header><div><h1>WorldTape · Jump rope</h1><span>Layered FreeTimeGS++ reconstruction</span></div><a href="comparison.html">Earlier comparisons ↗</a></header>
+  <div class="layout">
+    <section class="stage" aria-label="Layered scene preview">
+      <canvas id="view" width="352" height="640" aria-label="Reconstructed jumper. Drag left or right or use the camera slider to change angle."></canvas>
+      <video id="atlas" preload="auto" muted playsinline loop src="assets/layered-jump-rope/angles.mp4"></video>
+      <output id="hud">90° · 2.71 s</output>
+    </section>
+    <aside class="controls">
+      <div class="section">
+        <div class="row"><h2>Layers</h2></div>
+        <div class="buttons">
+          <button id="combined" type="button" aria-pressed="true">Full scene</button>
+          <button id="background" type="button" aria-pressed="false">Background only</button>
         </div>
-        <p class="metadata">105 frames at 24 fps · Interactive WebGL 2</p>
       </div>
-      <figure class="comparison">
-        <div class="stills">
-          <a href="viewer.html?asset=wan-ring8&amp;frame=65&amp;camera=5">
-            <img src="images/wan-180.webp" width="352" height="614" alt="Wan2.2 rear-view reconstruction of the person jumping rope">
-            <span>Wan2.2</span>
-          </a>
-          <a href="viewer.html?asset=h3-ring8&amp;frame=65&amp;camera=5">
-            <img src="images/h3-180.webp" width="352" height="614" alt="MiniMax-H3 rear-view reconstruction at the same frame">
-            <span>MiniMax-H3</span>
-          </a>
+      <div class="section">
+        <div class="row"><label for="angle"><strong>Camera</strong></label><output id="angle-value" for="angle">90°</output></div>
+        <input class="range" id="angle" type="range" min="0" max="31" value="8">
+        <div class="buttons angles">
+          <button type="button" data-angle="0">0°</button>
+          <button type="button" data-angle="8">90°</button>
+          <button type="button" data-angle="16">180°</button>
+          <button type="button" data-angle="24">270°</button>
         </div>
-        <figcaption>Rear camera · Frame 65 <span>2.71 s</span></figcaption>
-      </figure>
-    </section>
-    <section class="notes" aria-label="How to compare">
-      <h2>Compare the same moment</h2>
-      <p>Scrub the timeline, select a camera and use the comparison button to switch models while keeping the selected frame and camera. The browser downloads about <span id="download-size">50 MB</span> per model.</p>
-      <p class="scope">Research preview. Both models are fitted to generated video, using nominal camera poses. Gaps and motion artifacts remain in some views.</p>
-    </section>
-  </main>
-  <footer>WorldTape</footer>
+        <p class="hint">Drag the scene to change angle, even while paused.</p>
+      </div>
+      <div class="section">
+        <div class="row"><label for="time"><strong>Time</strong></label><output id="time-value" for="time">2.71 s</output></div>
+        <input class="range" id="time" type="range" min="0" max="104" value="65">
+        <div class="buttons">
+          <button id="play" type="button">Play</button>
+          <button id="restart" type="button">Restart</button>
+          <button type="button" data-frame="65">First jump</button>
+          <button type="button" data-frame="88">Second jump</button>
+        </div>
+      </div>
+      <p id="status" role="status">Loading reconstruction…</p>
+    </aside>
+  </div>
+</main>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const video = $("atlas"), view = $("view"), ctx = view.getContext("2d");
+const angleInput = $("angle"), timeInput = $("time");
+const backdrop = new Image(), poster = new Image();
+const fps = 24, frames = 105, count = 32, width = 352, height = 640, columns = 8;
+let angle = 8, frame = 65, layer = "combined", pending = 65, drag = null;
+let ready = false;
+function updateLabels() {
+  const degrees = String(Number((angle * 360 / count).toFixed(2)));
+  const seconds = (frame / fps).toFixed(2) + " s";
+  $("angle-value").textContent = degrees + "°";
+  $("time-value").textContent = seconds;
+  $("hud").textContent = degrees + "° · " + seconds;
+  angleInput.setAttribute("aria-valuetext", degrees + " degrees");
+  timeInput.setAttribute("aria-valuetext", seconds);
+  angleInput.value = angle;
+  timeInput.value = frame;
+}
+function draw() {
+  const media = layer === "background" ? backdrop : video;
+  if ((media === video && video.readyState < 2) || (media === backdrop && !backdrop.naturalWidth)) {
+    if (poster.naturalWidth) ctx.drawImage(poster, 0, 0, width, height);
+    return;
+  }
+  const x = (angle % columns) * width, y = Math.floor(angle / columns) * height;
+  ctx.drawImage(media, x, y, width, height, 0, 0, width, height);
+}
+function setAngle(value) {
+  angle = ((Number(value) % count) + count) % count;
+  updateLabels();
+  draw();
+}
+function seek(value) {
+  frame = Math.max(0, Math.min(frames - 1, Number(value)));
+  pending = frame;
+  updateLabels();
+  if (!video.duration) return;
+  video.currentTime = Math.min(video.duration - .001, frame / fps + .002);
+}
+function tick(_, metadata) {
+  if (pending === null && !video.paused) {
+    const actual = metadata ? metadata.mediaTime : video.currentTime;
+    frame = Math.min(frames - 1, Math.floor(actual * fps + .005));
+    updateLabels();
+  }
+  draw();
+  if ("requestVideoFrameCallback" in video) video.requestVideoFrameCallback(tick);
+}
+function stopPlayback() {
+  video.pause();
+  $("play").textContent = "Play";
+}
+video.addEventListener("loadedmetadata", () => seek(pending ?? frame));
+video.addEventListener("canplay", () => {
+  ready = true;
+  $("status").textContent = "32 rendered viewpoints · 24 fps";
+  draw();
+});
+video.addEventListener("seeked", () => {
+  pending = null;
+  draw();
+});
+video.addEventListener("error", () => {
+  $("status").textContent = "Could not load the scene media. Try reloading the page.";
+});
+if ("requestVideoFrameCallback" in video) video.requestVideoFrameCallback(tick);
+else video.addEventListener("timeupdate", () => tick());
+backdrop.onload = poster.onload = draw;
+backdrop.src = "assets/layered-jump-rope/background.jpg";
+poster.src = "assets/layered-jump-rope/poster_f065.jpg";
+angleInput.addEventListener("input", e => setAngle(e.target.value));
+timeInput.addEventListener("input", e => {
+  stopPlayback();
+  seek(e.target.value);
+});
+document.querySelectorAll("[data-angle]").forEach(el => el.addEventListener("click", () => setAngle(el.dataset.angle)));
+document.querySelectorAll("[data-frame]").forEach(el => el.addEventListener("click", () => {
+  stopPlayback();
+  seek(el.dataset.frame);
+}));
+$("restart").addEventListener("click", () => seek(0));
+$("play").addEventListener("click", async () => {
+  if (!ready) return;
+  if (!video.paused) return stopPlayback();
+  try { await video.play(); $("play").textContent = "Pause"; }
+  catch { $("status").textContent = "Playback failed. Try reloading the page."; }
+});
+for (const name of ["combined", "background"]) $(name).addEventListener("click", () => {
+  layer = name;
+  $("combined").setAttribute("aria-pressed", String(name === "combined"));
+  $("background").setAttribute("aria-pressed", String(name === "background"));
+  draw();
+});
+view.addEventListener("pointerdown", e => {
+  if (e.button !== 0) return;
+  drag = {x:e.clientX, angle};
+  view.setPointerCapture(e.pointerId);
+  view.classList.add("dragging");
+});
+view.addEventListener("pointermove", e => {
+  if (drag) setAngle(drag.angle + Math.round((e.clientX - drag.x) / 10));
+});
+for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) view.addEventListener(name, () => {
+  drag = null;
+  view.classList.remove("dragging");
+});
+updateLabels();
+</script>
 </body>
 </html>
